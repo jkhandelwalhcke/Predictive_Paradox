@@ -12,13 +12,14 @@ As I was restricted to using only classical models, no LSTMs and autoregressive 
 Accurate elecetricity demand forecasting is critical for power grid stability and efficient energy management. Overestimating demand leads to wasted geeration and financial lossed, while underestimating demand causes sever grid instability and load shedding.   
 I was asked to build a robust machine learning pipeline to predict the short term power demand based on historical consumption, environmental factors,and economic indicators.   
 Also, I was restricted to using classical machine learning models (Linear regressors or Tree based), prohibiting the use of DL architectures and autoregressive packages.  
+Using the availabe dataset, we had to partition it into two different parts, one for training and the other for the test, where the last one year data was held back for testing.
 
 ## 3. Data Preparation and Anamoly Resolution:
 The provided dataset, since it represents real world data, contained a few inconsistencies and outlying spikes and drops in data that clearly weren't possible. Thus, rather than row deletion, I used linear interpolation to replace the inconsistent readings.  
 A few of those were:  
-* Z-score Anamoly : The main demand_mw time series data contained physically impossible data outliers such as a recorded spike of 121,000 MW in demand, when the average throughout the years was close to 8500 MW. Rather than simply deleting the respective rows or applying a rule that might not take into account the seasonal variations, I used new parameters such as demand_over_last_week, demand_over_last_24_hours, etc. which could help the model track the various timelines to explain seasonal variations, increased demands over a specific timeline, etc.   
-* Weekend Mapping : To encode the weekdays, I checked the day-wise averages over the year, and against the expectation, it turned out that the lowest averages showed up on Fridays and Saturdays. Upon further investigation, it turned out, that the data is from the company Power Grid Company of Banladesh (PGCB), which operates in Bangladesh primarily, where weekends are generally assigned to Fridays and Saturdays, thus explaining the data. So, rather than taking the conventional weekends, I used this knowledge, since on weekends, the demand would be expected to be lower, since factories major consumers are closed.
-* Macroeconomic Integration : Finally, I integrated the World Bank report, forward filled the indicators snf merged the final data, aligning it all for the model to traing with a long-term baseline of the grid capacity and economic growth.
+* **Z-score Anamoly** : The main demand_mw time series data contained physically impossible data outliers such as a recorded spike of 121,000 MW in demand, when the average throughout the years was close to 8500 MW. Rather than simply deleting the respective rows or applying a rule that might not take into account the seasonal variations, I used new parameters such as demand_over_last_week, demand_over_last_24_hours, etc. which could help the model track the various timelines to explain seasonal variations, increased demands over a specific timeline, etc.   
+* **Weekend Mapping** : To encode the weekdays, I checked the day-wise averages over the year, and against the expectation, it turned out that the lowest averages showed up on Fridays and Saturdays. Upon further investigation, it turned out, that the data is from the company Power Grid Company of Banladesh (PGCB), which operates in Bangladesh primarily, where weekends are generally assigned to Fridays and Saturdays, thus explaining the data. So, rather than taking the conventional weekends, I used this knowledge, since on weekends, the demand would be expected to be lower, since factories major consumers are closed.
+* **Macroeconomic Integration** : Finally, I integrated the World Bank report, forward filled the indicators snf merged the final data, aligning it all for the model to traing with a long-term baseline of the grid capacity and economic growth.
 
 ## 4. Feature Architecture & Physical Intuition
 
@@ -33,7 +34,22 @@ Because classical regressors evaluate rows independently, the concept of "time" 
 To ensure strict integrity and prevention of data leakage, I was asked to evaluate the model on a continuous test set. The primary metric used was Mean Absolute Percentage Error (MAPE).   
 * **Random Forest Baseline:** Initially, I used Random Forest Regressor for a solid baseline, which achieved a great test run with MAPE of 1.95 % and RMSE of 355.15 MW.  
 * **Gradient Boosting:** Then, CatBoost regressor was trained. By utilizing sequential error correction, it outperformed the baseline model, achieving a MAPE of 1.62 % and a RMSE of 257 MW.
-* **The Ensembling experiment:** To try if the variations could be further stabilized, we tried ensembling by averaging the predictions of the Random Forest and CatBoost models. However, testing proves the ensemble wasn 
+* **The Ensembling experiment:** To try if the variations could be further stabilized, we tried ensembling by averaging the predictions of the Random Forest and CatBoost models. However, testing proves the ensemble wasn't the best performer since it deviated further away from the best results since it took the average prediction of Random Forest and CatBoost. It gave a test MAPE score of 1.62 % and and RMSE of 281.1 MW.  
+The final conclusion I got from this is that CatBoost gave the most accurate predictions.
 
+ ### Visual Evidence  
+ **Drivers of demand with respect to both models:**  
+  
+ <img width="989" height="790" alt="image" src="https://github.com/user-attachments/assets/0367168b-61bb-4a1e-90a2-a054f3d63d1f" />    
 
+      
+ <img width="989" height="790" alt="image" src="https://github.com/user-attachments/assets/1aa18217-513f-4744-b9e1-313f3d0ffed7" />   
+ 
+### Conclusions  
 
+**Model Reliability:**    
+Lastly, to check the actual accuracy of the model, with a visual experience, I plotted a graph for the last 14 days of the dataset, for the actual data vs the prediction.   
+
+<img width="1485" height="583" alt="image" src="https://github.com/user-attachments/assets/1882cc58-4f9f-4a9f-ac3a-93d467740074" />  
+
+**Finally, I conclude that in my pipeline, CatBoost gave the best result, and that incorporating further features such as national holidays, and festivals, which could contribute even more, may be able to push the error percentage below 1.5 %**  
